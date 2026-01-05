@@ -178,32 +178,32 @@ const menuConfig = {
         //   ]
         // },
         {
-          id: 'leads-management',
-          title: 'Leads Management',
+          id: 'referrals-management',
+          title: 'Refferals Management',
           type: 'collapse',
           icon: icons.PeopleAltOutlinedIcon,
           children: [
             {
-              id: 'leads-dashboard',
-              title: 'Leads Dashboard',
+              id: 'referals-dashboard',
+              title: 'Referrals Dashboard',
               type: 'item',
               icon: icons.DashboardOutlinedIcon,
-              url: '/leads/dashboard'
+              url: '/referrals'
             },
-            {
-              id: 'all-leads',
-              title: 'All Leads',
-              type: 'item',
-              icon: icons.ListAltOutlinedIcon,
-              url: '/leads/all'
-            },
-            {
-              id: 'add-lead',
-              title: 'Add Lead',
-              type: 'item',
-              icon: icons.PersonAddAlt1OutlinedIcon,
-              url: '/leads/add'
-            }
+            // {
+            //   id: 'all-leads',
+            //   title: 'All Leads',
+            //   type: 'item',
+            //   icon: icons.ListAltOutlinedIcon,
+            //   url: '/leads/all'
+            // },
+            // {
+            //   id: 'add-lead',
+            //   title: 'Add Lead',
+            //   type: 'item',
+            //   icon: icons.PersonAddAlt1OutlinedIcon,
+            //   url: '/leads/add'
+            // }
           ]
         }
         // {
