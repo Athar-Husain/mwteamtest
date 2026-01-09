@@ -15,6 +15,7 @@ import AddTicket from './AddTicket';
 import { updateTicket, optimisticUpdateTicket, getAllTicketsForTeam } from '../../redux/features/Tickets/TicketSlice';
 import StatusBoard from './StatusBoard';
 import TicketHeader from './TicketHeader';
+import Loader from '../../component/Loader/Loader';
 
 // --- Enhancement: Quick Stats Bar Component ---
 const TeamStatsBar = ({ tickets }) => {
@@ -91,7 +92,7 @@ const TicketBoard = () => {
   const dispatch = useDispatch();
 
   const { Team } = useSelector((state) => state.team || {});
-  const { allTickets = [], isTicketLoading } = useSelector((state) => state.ticket);
+  const { allTickets, isTicketLoading } = useSelector((state) => state.ticket);
 
   const [openAddTicket, setOpenAddTicket] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false); // Local state for refresh animation
@@ -128,7 +129,7 @@ const TicketBoard = () => {
 
   // console.log('filteredTickets', filteredTickets);
 
-  const handleOnDragEnd = (result) => {
+  const handleOnDragEnd = async (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
@@ -141,98 +142,105 @@ const TicketBoard = () => {
 
     dispatch(optimisticUpdateTicket({ ticketId: draggableId, newStatus }));
     dispatch(updateTicket({ id: draggableId, data: { status: newStatus } }));
+    await dispatch(getAllTicketsForTeam());
   };
 
   return (
-    <Box sx={{ bgcolor: '#F4F7FE', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header */}
-      <Box sx={{ p: 1, bgcolor: 'background.paper', borderBottom: `1px solid ${theme.palette.divider}` }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="h5" fontWeight={500} color="#1B2559">
-                My Work Order Board
-              </Typography>
-              <Tooltip title="Refresh Tickets">
-                <IconButton
-                  onClick={handleRefresh}
-                  disabled={isRefreshing || isTicketLoading}
-                  sx={{
-                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
-                    '@keyframes spin': {
-                      '0%': { transform: 'rotate(0deg)' },
-                      '100%': { transform: 'rotate(360deg)' }
-                    }
-                  }}
-                >
-                  <RefreshIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Stack>
+    <>
+      {isTicketLoading ? (
+        <Loader />
+      ) : (
+        <Box sx={{ bgcolor: '#F4F7FE', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Header */}
+          <Box sx={{ p: 1, bgcolor: 'background.paper', borderBottom: `1px solid ${theme.palette.divider}` }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="h5" fontWeight={500} color="#1B2559">
+                    My Work Order Board
+                  </Typography>
+                  <Tooltip title="Refresh Tickets">
+                    <IconButton
+                      onClick={handleRefresh}
+                      disabled={isRefreshing || isTicketLoading}
+                      sx={{
+                        animation: isRefreshing ? 'spin 1s linear infinite' : 'none',
+                        '@keyframes spin': {
+                          '0%': { transform: 'rotate(0deg)' },
+                          '100%': { transform: 'rotate(360deg)' }
+                        }
+                      }}
+                    >
+                      <RefreshIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
 
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
-              <Typography variant="body2" color="text.secondary">
-                Technician: <b>{Team?.firstName || 'Field Agent'}</b>
-              </Typography>
-              <Chip
-                label={`${filteredTickets.length} Total Tasks`}
-                size="small"
-                sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontWeight: 700 }}
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Technician: <b>{Team?.firstName || 'Field Agent'}</b>
+                  </Typography>
+                  <Chip
+                    label={`${filteredTickets.length} Total Tasks`}
+                    size="small"
+                    sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), color: 'primary.main', fontWeight: 700 }}
+                  />
+                </Stack>
+              </Box>
+
+              <TicketHeader
+                title=""
+                currentView="status"
+                hideViewSwitcher={true}
+                onFilterChange={setFilters}
+                onAddTicketClick={() => setOpenAddTicket(true)}
               />
             </Stack>
           </Box>
 
-          <TicketHeader
-            title=""
-            currentView="status"
-            hideViewSwitcher={true}
-            onFilterChange={setFilters}
-            onAddTicketClick={() => setOpenAddTicket(true)}
-          />
-        </Stack>
-      </Box>
+          {/* Board Content */}
+          <Box sx={{ flex: 1, overflowX: 'auto', p: 3 }}>
+            <TeamStatsBar tickets={filteredTickets} />
 
-      {/* Board Content */}
-      <Box sx={{ flex: 1, overflowX: 'auto', p: 3 }}>
-        <TeamStatsBar tickets={filteredTickets} />
-
-        <DragDropContext onDragEnd={handleOnDragEnd}>
-          {isTicketLoading && !isRefreshing ? (
-            <Stack direction="row" spacing={3} sx={{ height: '100%' }}>
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} variant="rectangular" width={320} height="100%" sx={{ borderRadius: 4, flexShrink: 0 }} />
-              ))}
-            </Stack>
-          ) : (
-            <Fade in timeout={500}>
-              <Box sx={{ height: '100%' }}>
-                {filteredTickets.length === 0 ? (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '50vh',
-                      opacity: 0.6
-                    }}
-                  >
-                    <Typography variant="h6" fontWeight={700}>
-                      No Tickets Found
-                    </Typography>
-                    <Typography variant="body2">You're all caught up for these filters.</Typography>
+            <DragDropContext onDragEnd={handleOnDragEnd}>
+              {isTicketLoading && !isRefreshing ? (
+                <Stack direction="row" spacing={3} sx={{ height: '100%' }}>
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} variant="rectangular" width={320} height="100%" sx={{ borderRadius: 4, flexShrink: 0 }} />
+                  ))}
+                </Stack>
+              ) : (
+                <Fade in timeout={500}>
+                  <Box sx={{ height: '100%' }}>
+                    {filteredTickets.length === 0 ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '50vh',
+                          opacity: 0.6
+                        }}
+                      >
+                        <Typography variant="h6" fontWeight={700}>
+                          No Tickets Found
+                        </Typography>
+                        <Typography variant="body2">You're all caught up for these filters.</Typography>
+                      </Box>
+                    ) : (
+                      <StatusBoard tickets={filteredTickets} statuses={['Open', 'In Progress', 'escalated', 'resolved']} />
+                    )}
                   </Box>
-                ) : (
-                  <StatusBoard tickets={filteredTickets} statuses={['Open', 'In Progress', 'escalated', 'resolved']} />
-                )}
-              </Box>
-            </Fade>
-          )}
-        </DragDropContext>
-      </Box>
+                </Fade>
+              )}
+            </DragDropContext>
+          </Box>
 
-      <AddTicket open={openAddTicket} handleClose={() => setOpenAddTicket(false)} />
-    </Box>
+          <AddTicket open={openAddTicket} handleClose={() => setOpenAddTicket(false)} />
+        </Box>
+      )}
+    </>
   );
 };
 
