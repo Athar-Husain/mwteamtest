@@ -166,6 +166,14 @@ const teamSlice = createSlice({
         console.log('Action payload in getTeamLoginStatus', action.payload);
       })
 
+      .addCase(TeamLogout.fulfilled, (state) => {
+        state.isLoggedIn = false;
+        state.Team = null;
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('token_expiry');
+        toast.info('Logged out');
+      })
+
       // GET PROFILE
       .addCase(getTeam.fulfilled, (state, action) => {
         state.isTeamLoading = false;
